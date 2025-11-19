@@ -1,0 +1,47 @@
+# Core ML Libraries
+torch>=2.0.0
+transformers>=4.30.0
+datasets>=2.12.0
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# API and Web Service
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+pydantic>=2.0.0
+python-multipart>=0.0.6
+
+# Explainability
+shap>=0.42.0
+captum>=0.6.0
+
+# Note: Blockchain/cryptography handled by blockchain team
+# AI team only generates proof packets (no signing dependencies needed)
+
+# Experiment Tracking and Optimization
+mlflow>=2.5.0
+optuna>=3.2.0
+tensorboard>=2.13.0
+
+# Model Optimization
+onnx>=1.14.0
+onnxruntime>=1.15.0
+
+# Data Processing
+textstat>=0.7.3
+nltk>=3.8.0
+spacy>=3.6.0
+
+# Testing and Quality
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.7.0
+flake8>=6.0.0
+mypy>=1.4.0
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0
+tqdm>=4.65.0
+requests>=2.31.0

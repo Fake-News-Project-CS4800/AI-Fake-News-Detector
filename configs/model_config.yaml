@@ -1,0 +1,48 @@
+# Model Configuration
+model:
+  name: "distilbert-base-uncased"  # Can switch to roberta-base for better performance
+  num_labels: 3  # Human, AI, Inconclusive
+  max_length: 512
+  use_hybrid_features: false  # Set to true to add perplexity + stylometric features
+
+# Training Configuration
+training:
+  output_dir: "./models/checkpoints"
+  num_epochs: 3
+  batch_size: 16
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  warmup_steps: 500
+  logging_steps: 100
+  eval_steps: 500
+  save_steps: 1000
+  gradient_accumulation_steps: 2
+  fp16: true  # Use mixed precision training if GPU supports it
+  seed: 42
+
+# Data Configuration
+data:
+  train_path: "./data/splits/train.csv"
+  val_path: "./data/splits/val.csv"
+  test_path: "./data/splits/test.csv"
+  text_column: "text"
+  label_column: "label"
+  # Label mapping: 0=Human, 1=AI, 2=Inconclusive
+
+# Evaluation Configuration
+evaluation:
+  metrics:
+    - accuracy
+    - f1_macro
+    - roc_auc
+    - calibration_error
+  confidence_threshold: 0.7  # Below this, classify as "Inconclusive"
+
+# Hybrid Features (optional)
+hybrid_features:
+  perplexity_model: "gpt2"
+  stylometric_features:
+    - type_token_ratio
+    - avg_sentence_length
+    - lexical_diversity
+    - punctuation_ratio

@@ -1,0 +1,31 @@
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  reload: false
+  workers: 4
+
+# Model Serving
+model:
+  name: "Hello-SimpleAI/chatgpt-detector-roberta"  # Pre-trained model from HuggingFace
+  device: "cpu"  # or "cuda" if GPU available
+  confidence_threshold: 0.7  # Below this, classify as "Inconclusive"
+  use_onnx: false  # Set true for optimized inference
+  batch_inference: false
+
+# Blockchain Integration (TODO: add later)
+# blockchain:
+#   proof_packet_version: "1.0"
+#   # NOTE: AI team only generates proof packets
+#   # Blockchain team handles signing and storage
+
+# Rate Limiting
+rate_limit:
+  enabled: true
+  requests_per_minute: 60
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"
+  file: "./logs/api.log"
