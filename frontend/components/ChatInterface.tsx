@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { analyzeText, APIError } from '@/lib/api';
 import { Message } from '@/lib/types';
 import ResultCard from './ResultCard';
@@ -9,6 +9,16 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to results when messages change
+  useEffect(() => {
+    if (messages.length > 0 && resultsRef.current) {
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,19 +69,49 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] max-w-4xl mx-auto">
+    <div className="flex flex-col max-w-4xl mx-auto space-y-4">
+      {/* Input Area */}
+      <form onSubmit={handleSubmit} className="relative">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Paste your text here to check if it's AI-generated..."
+          className="w-full p-4 pr-24  text-gray-300 placeholder-gray-500 border-2 border-gray-400 rounded-lg shadow-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+          rows={4}
+          disabled={isLoading}
+        />
+        <button
+          type="submit"
+          disabled={!input.trim() || isLoading}
+          className="absolute bottom-4 right-4 p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
+            </svg>
+          )}
+        </button>
+      </form>
+
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto space-y-4 p-4 bg-gray-50 rounded-lg mb-4">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-400">
-            <div className="text-6xl mb-4">🔍</div>
-            <h2 className="text-xl font-semibold mb-2">AI Text Detector</h2>
-            <p className="text-sm">Paste any text below to check if it was written by AI or a human</p>
-          </div>
-        ) : (
-          messages.map((message) => (
+      {messages.length > 0 && (
+        <div className="space-y-4 p-4">
+          {messages.map((message, index) => (
             <div
               key={message.id}
+              ref={message.type === 'bot' ? resultsRef : null}
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
@@ -91,10 +131,12 @@ export default function ChatInterface() {
                 )}
               </div>
             </div>
-          ))
-        )}
+          ))}
+        </div>
+      )}
 
-        {isLoading && (
+      {isLoading && (
+        <div className="p-4">
           <div className="flex justify-start">
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
               <div className="flex items-center gap-2">
@@ -107,27 +149,8 @@ export default function ChatInterface() {
               </div>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Input Area */}
-      <form onSubmit={handleSubmit} className="relative">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Paste your text here to check if it's AI-generated..."
-          className="w-full p-4 pr-24 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-          rows={4}
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          disabled={!input.trim() || isLoading}
-          className="absolute bottom-4 right-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
-        >
-          {isLoading ? 'Analyzing...' : 'Analyze'}
-        </button>
-      </form>
+        </div>
+      )}
     </div>
   );
 }

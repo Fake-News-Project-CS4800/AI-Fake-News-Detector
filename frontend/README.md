@@ -1,10 +1,11 @@
 # AI Fake News Detector - Frontend
 
-ChatGPT-style UI for detecting AI-generated text.
+Clean, modern UI for detecting AI-generated text.
 
 ## 🚀 Quick Start
 
 **1. Make sure the backend is running first:**
+
 ```bash
 # In the root directory
 source venv/bin/activate
@@ -12,6 +13,7 @@ python run_api.py
 ```
 
 **2. Start the frontend:**
+
 ```bash
 # In the frontend directory
 npm run dev
@@ -22,6 +24,7 @@ npm run dev
 ## ⚙️ Configuration
 
 The backend API URL is configured in `.env.local`:
+
 ```
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
@@ -44,7 +47,7 @@ frontend/
 
 ## 🎨 Features
 
-- ✅ ChatGPT-style interface
+- ✅ Clean, intuitive interface
 - ✅ Real-time text analysis
 - ✅ Visual confidence meters
 - ✅ Detailed explanations
