@@ -13,6 +13,12 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from ..data.preprocessor import compute_hash, normalize_text
 from ..explainability.explainer import ModelExplainer
 # from ..blockchain.proof_packet import ProofPacket  # Blockchain integration - TODO: add later
+from fastapi import Depends  # you already import FastAPI, HTTPException, etc.
+from sqlalchemy.orm import Session
+
+from ..db.database import SessionLocal
+from ..db.models import AnalysisResult
+
 
 
 # Load API config
@@ -39,6 +45,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # Request/Response models
 class AnalyzeRequest(BaseModel):
@@ -117,7 +129,10 @@ async def health_check():
 
 
 @app.post("/analyze", response_model=AnalyzeResponse)
-async def analyze_text(request: AnalyzeRequest):
+async def analyze_text(
+    request: AnalyzeRequest,
+    db: Session = Depends(get_db)
+):
     """Analyze text for AI-generated content.
 
     Args:
@@ -187,27 +202,30 @@ async def analyze_text(request: AnalyzeRequest):
             'Inconclusive': inconclusive_prob / total
         }
 
-        # Get explanation if requested
+        # TEMPORARILY DISABLE EXPLANATIONS (to avoid Captum errors)
         explanation = None
-        reasons = []
+        reasons = [f"Classification: {label} (confidence: {confidence:.2%})"]
 
-        if explainer is not None:
-            try:
-                if request.include_explanation:
-                    full_explanation = explainer.explain_prediction(request.text)
-                    reasons = full_explanation['reasons']
-                    explanation = {
-                        'top_tokens': full_explanation['top_tokens'][:5],  # Limit for API response
-                        'full_analysis': full_explanation
-                    }
-                else:
-                    # Still get basic reasons
-                    reasons = explainer.get_heuristic_reasons(request.text, predicted_class)
-            except Exception as e:
-                print(f"Warning: Explanation failed: {e}")
-                reasons = [f"Classification: {label} (confidence: {confidence:.2%})"]
-        else:
-            reasons = [f"Classification: {label} (confidence: {confidence:.2%})"]
+        # Get explanation if requested
+        #explanation = None
+        #reasons = []
+
+        #if explainer is not None:
+        #    try:
+        #            full_explanation = explainer.explain_prediction(request.text)
+        #            reasons = full_explanation['reasons']
+        #            explanation = {
+        #                'top_tokens': full_explanation['top_tokens'][:5],  # Limit for API response
+        #                'full_analysis': full_explanation
+        #            }
+        #        else:
+        #            # Still get basic reasons
+        #            reasons = explainer.get_heuristic_reasons(request.text, predicted_class)
+        #    except Exception as e:
+        #        print(f"Warning: Explanation failed: {e}")
+        #        reasons = [f"Classification: {label} (confidence: {confidence:.2%})"]
+        #else:
+        #    reasons = [f"Classification: {label} (confidence: {confidence:.2%})"]
 
         # TODO: Blockchain integration - Generate proof packet here later
         # proof_packet = None
@@ -222,6 +240,20 @@ async def analyze_text(request: AnalyzeRequest):
 
         # Calculate processing time
         processing_time_ms = (time.time() - start_time) * 1000
+
+                # Save result into the database
+        db_obj = AnalysisResult(
+            text_hash=text_hash,
+            label=label,
+            confidence=confidence,
+            probabilities=probabilities,
+            reasons=reasons,
+            #model_version=MODEL_VERSION,
+            raw_text=request.text
+        )
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
 
         return AnalyzeResponse(
             text_hash=text_hash,

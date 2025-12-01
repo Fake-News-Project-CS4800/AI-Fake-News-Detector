@@ -2,7 +2,7 @@
 api:
   host: "0.0.0.0"
   port: 8000
-  reload: false
+  reload: true
   workers: 4
 
 # Model Serving
@@ -18,7 +18,8 @@ model:
 #   proof_packet_version: "1.0"
 #   # NOTE: AI team only generates proof packets
 #   # Blockchain team handles signing and storage
-
+database:
+  url: "postgresql+psycopg2://fake_user:fake_password@localhost:5432/fake_news_db" 
 # Rate Limiting
 rate_limit:
   enabled: true
