@@ -82,7 +82,7 @@ async def load_model():
     # Load pre-trained model and tokenizer from HuggingFace
     print(f"Loading {model_name} from HuggingFace...")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name).to(device)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name,use_safetensors=True).to(device)
     model.eval()
 
     # Initialize explainer (optional - may fail with some models)

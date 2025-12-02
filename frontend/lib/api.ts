@@ -38,9 +38,19 @@ export async function analyzeText(
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new APIError(
+        typeof error.detail === "string"
+          ? error.detail
+          : error.detail
+            ? JSON.stringify(error.detail)
+            : 'API returned an error: ${error.detail}',
+        response.status,
+        error
+        /*
         error.detail || `API request failed with status ${response.status}`,
         response.status,
         error
+        JSON.stringify(error.detail),
+        */
       );
     }
 
