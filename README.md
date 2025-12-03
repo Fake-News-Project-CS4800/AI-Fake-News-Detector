@@ -21,9 +21,28 @@ pip install torch transformers fastapi uvicorn pydantic pyyaml nltk captum numpy
 
 # Fix NLTK SSL issue (macOS)
 python -c "import ssl; import nltk; ssl._create_default_https_context = ssl._create_unverified_context; nltk.download('punkt'); nltk.download('punkt_tab')"
+
+# Install Postgres + SQLAlchemy support
+pip install sqlalchemy psycopg2-binary
+```
+### 2. PostgreSQL Setup
+
+```bash
+# Open a terminal with psql (or pgAdmin) and run:
+CREATE DATABASE fake_news_db;
+CREATE USER fake_user WITH PASSWORD 'fake_password';
+GRANT ALL PRIVILEGES ON DATABASE fake_news_db TO fake_user;
+
+# Ensure configuration database URL (configs/api_config.yaml) correlates:
+database:
+  url: "postgresql+psycopg2://fake_user:fake_password@localhost:5432/fake_news_db"
+
+# Create tables:
+source venv/bin/activate
+python create_tables.py
 ```
 
-### 2. Start the API
+### 3. Start the API
 
 ```bash
 # Activate virtual environment (if not already)
@@ -35,7 +54,7 @@ python run_api.py
 
 API runs at: **http://localhost:8000**
 
-### 3. Test the API
+### 4. Test the API
 
 **Option A: Browser (easiest)**
 - Open http://localhost:8000/docs
