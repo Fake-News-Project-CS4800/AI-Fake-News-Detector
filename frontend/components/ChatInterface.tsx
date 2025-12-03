@@ -13,14 +13,14 @@ export default function ChatInterface() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const [count, setCount] = useState(0);
 
-  /* Auto-scroll to results when messages change
+  // Auto-scroll to results when messages change
   useEffect(() => {
     if (messages.length > 0 && resultsRef.current) {
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 500);
     }
-  }, [messages]);*/
+  }, [messages]);
 
   function increment() {
     setCount(c => {
@@ -139,8 +139,8 @@ export default function ChatInterface() {
             >
               <div
                 className={`max-w-[80%] rounded-lg p-4 ${message.type === 'user'
-                  ? 'bg-blue-400 text-black shadow-xl mr-auto'
-                  : 'bg-white text-gray-900 shadow-sm border border-gray-200 mr-auto'
+                  ? 'bg-blue-400 text-black shadow-xl '
+                  : 'bg-white text-gray-900 shadow-sm border border-gray-200 '
                   }`}
               >
 
