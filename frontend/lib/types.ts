@@ -21,6 +21,26 @@ export interface AnalyzeResponse {
     top_tokens: Array<[string, number]>;
     full_analysis: any;
   } | null;
+  ensemble?: {
+    label: string;
+    confidence: number;
+    agreement_level: string;
+    models_agree: boolean;
+    roberta: {
+      label: string;
+      confidence: number;
+      probabilities: {
+        Human: number;
+        AI: number;
+        Inconclusive: number;
+      };
+    };
+    gemini: {
+      label: string;
+      confidence: number;
+      reasoning: string;
+    };
+  } | null;
 }
 
 export interface Message {

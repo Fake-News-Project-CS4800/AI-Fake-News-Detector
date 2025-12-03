@@ -110,6 +110,55 @@ model:
 
 ---
 
+## 🔬 Ensemble Mode (Optional)
+
+For improved accuracy, enable ensemble mode using both RoBERTa and Gemini AI:
+
+### 1. Get Gemini API Key
+1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy the generated key
+
+### 2. Set API Key
+Create a `.env` file in the project root (copy from `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add your key:
+```
+GEMINI_API_KEY=your_actual_api_key_here
+```
+
+### 3. Restart API
+```bash
+# Kill current process (if running)
+pkill -f "run_api.py"
+
+# Start API (will automatically load .env)
+source venv/bin/activate
+python run_api.py
+```
+
+### 4. Verify Ensemble Mode
+Check startup logs - you should see:
+```
+Gemini detector initialized - ensemble mode enabled
+```
+
+**Benefits of Ensemble Mode:**
+- ✅ Cross-validation between two different AI models
+- ✅ Higher confidence when models agree
+- ✅ Flags disagreements for manual review
+- ✅ More robust against false positives/negatives
+- ✅ See individual predictions from each model
+
+**Without Gemini API key:** System works normally with RoBERTa only (single model).
+
+---
+
 ## 🛑 Stop the API
 
 ```bash
@@ -182,6 +231,9 @@ Check internet connection. Model downloads automatically from HuggingFace on fir
 ✅ Fast inference (~20-100ms)
 ✅ REST API with FastAPI
 ✅ Interactive API docs
+✅ Ensemble mode with RoBERTa + Gemini (optional)
+✅ Next.js frontend with real-time analysis
+✅ Visual ensemble comparison UI
 
 ⚠️ Blockchain integration commented out (add later)
 

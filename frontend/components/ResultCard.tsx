@@ -7,7 +7,7 @@ interface ResultCardProps {
 }
 
 export default function ResultCard({ result }: ResultCardProps) {
-  const { label, confidence, probabilities, reasons, processing_time_ms } = result;
+  const { label, confidence, probabilities, reasons, processing_time_ms, ensemble } = result;
 
   // Color coding based on label
   const getLabelColor = () => {
@@ -55,6 +55,47 @@ export default function ResultCard({ result }: ResultCardProps) {
           {processing_time_ms.toFixed(0)}ms
         </div>
       </div>
+
+      {/* Ensemble Information */}
+      {ensemble && (
+        <div className="border-t border-gray-200 pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🔬</span>
+            <h4 className="text-sm font-semibold text-gray-700">Ensemble Analysis</h4>
+            <span className={`px-2 py-1 rounded text-xs font-medium ${
+              ensemble.models_agree
+                ? 'bg-green-100 text-green-700'
+                : 'bg-orange-100 text-orange-700'
+            }`}>
+              {ensemble.agreement_level}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            {/* RoBERTa Prediction */}
+            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold text-blue-800">RoBERTa Model</span>
+              </div>
+              <div className="text-sm font-bold text-blue-900">{ensemble.roberta.label}</div>
+              <div className="text-xs text-blue-700">
+                {(ensemble.roberta.confidence * 100).toFixed(1)}% confidence
+              </div>
+            </div>
+
+            {/* Gemini Prediction */}
+            <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold text-purple-800">Gemini AI</span>
+              </div>
+              <div className="text-sm font-bold text-purple-900">{ensemble.gemini.label}</div>
+              <div className="text-xs text-purple-700">
+                {(ensemble.gemini.confidence * 100).toFixed(1)}% confidence
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Probability Bars */}
       <div className="space-y-2">
