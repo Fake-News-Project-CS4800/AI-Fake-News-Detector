@@ -6,7 +6,7 @@ from typing import Dict, Optional
 import torch
 import yaml
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -19,7 +19,17 @@ from ..explainability.explainer import ModelExplainer
 from .gemini_client import GeminiDetector
 from .ensemble import EnsembleDetector
 # from ..blockchain.proof_packet import ProofPacket  # Blockchain integration - TODO: add later
+from sqlalchemy.orm import Session
+from ..db.database import SessionLocal
+from ..db.models import AnalysisResult
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+#gives the API a connection to the database 
 
 # Load API config
 with open('./configs/api_config.yaml', 'r') as f:
@@ -135,9 +145,14 @@ async def health_check():
         "model_loaded": model is not None
     }
 
+# accepts the user’s text and gives the function a DB connection 
 
 @app.post("/analyze", response_model=AnalyzeResponse)
-async def analyze_text(request: AnalyzeRequest):
+async def analyze_text(
+    request: AnalyzeRequest,
+    db: Session = Depends(get_db)
+):
+
     """Analyze text for AI-generated content.
 
     Args:
@@ -246,8 +261,10 @@ async def analyze_text(request: AnalyzeRequest):
                 ensemble_result = None
 
         # Get explanation if requested
+        # TEMPORARILY DISABLE EXPLANATIONS (otherwise Captum errors out)
         explanation = None
-        reasons = []
+        reasons = [f"Classification: {label} (confidence: {confidence:.2%})"]
+
 
         if explainer is not None:
             try:
@@ -290,6 +307,20 @@ async def analyze_text(request: AnalyzeRequest):
 
         # Calculate processing time
         processing_time_ms = (time.time() - start_time) * 1000
+
+        # Save result into the database
+        db_obj = AnalysisResult(
+            text_hash=text_hash,
+            label=label,
+            confidence=confidence,
+            probabilities=probabilities,
+            reasons=reasons,
+            model_version=MODEL_VERSION,  
+            raw_text=request.text
+        )
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
 
         return AnalyzeResponse(
             text_hash=text_hash,
