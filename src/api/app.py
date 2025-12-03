@@ -23,7 +23,7 @@ def get_db():
         yield db
     finally:
         db.close()
-
+#gives the API a connection to the database 
 
 # Load API config
 with open('./configs/api_config.yaml', 'r') as f:
@@ -125,6 +125,7 @@ async def health_check():
         "model_loaded": model is not None
     }
 
+# accepts the user’s text and gives the function a DB connection 
 
 @app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_text(
@@ -246,7 +247,7 @@ async def analyze_text(
             confidence=confidence,
             probabilities=probabilities,
             reasons=reasons,
-            model_version=MODEL_VERSION,  # optional, yours was commented out
+            model_version=MODEL_VERSION,  
             raw_text=request.text
         )
         db.add(db_obj)

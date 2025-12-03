@@ -16,3 +16,5 @@ class AnalysisResult(Base):
     raw_text = Column(Text, nullable=True)
     model_version = Column(String(32), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+#

@@ -10,3 +10,5 @@ database_url = config["database"]["url"]
 engine = create_engine(database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+# This file sets up the database connection and session for SQLAlchemy ORM
