@@ -5,25 +5,37 @@ import { analyzeText, APIError } from '@/lib/api';
 import { Message } from '@/lib/types';
 import ResultCard from './ResultCard';
 
+
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const [count, setCount] = useState(0);
 
-  // Auto-scroll to results when messages change
+  /* Auto-scroll to results when messages change
   useEffect(() => {
     if (messages.length > 0 && resultsRef.current) {
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
+      }, 500);
     }
-  }, [messages]);
+  }, [messages]);*/
+
+  function increment() {
+    setCount(c => {
+      const next = c + 1;
+      return next === 0 ? next + 1 : next
+    });   // increment the counter
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!input.trim() || isLoading) return;
+
+    increment();
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -32,7 +44,7 @@ export default function ChatInterface() {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [userMessage, ...prev]);
     setInput('');
     setIsLoading(true);
 
@@ -49,7 +61,7 @@ export default function ChatInterface() {
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, botMessage]);
+      setMessages((prev) => [botMessage, ...prev]);
     } catch (error) {
       console.error('Analysis failed:', error);
 
@@ -62,15 +74,20 @@ export default function ChatInterface() {
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [errorMessage, ...prev]);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col max-w-3xl mx-auto space-y-4 ml-0">
+    <div className="flex flex-col max-w-3xl mx-auto space-y-4 ml-0"
+      style={{
+        padding: '0px 20px',
+      }}
+    >
       {/* Input Area */}
+
       <form onSubmit={handleSubmit} className="relative">
         <textarea
           value={input}
@@ -86,7 +103,8 @@ export default function ChatInterface() {
           className="absolute bottom-4 right-4 p-3 bg-blue-500 text-black rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+            />
           ) : (
             <svg
               className="w-5 h-5"
@@ -104,10 +122,15 @@ export default function ChatInterface() {
           )}
         </button>
       </form>
+      <p
+        className={'text-black'}
+      >{count === 0 ? "" : count})</p>
+
 
       {/* Messages Area */}
       {messages.length > 0 && (
         <div className="space-y-4 p-4">
+
           {messages.map((message, index) => (
             <div
               key={message.id}
@@ -116,10 +139,11 @@ export default function ChatInterface() {
             >
               <div
                 className={`max-w-[80%] rounded-lg p-4 ${message.type === 'user'
-                  ? 'bg-blue-400 text-black shadow-xl'
-                  : 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                  ? 'bg-blue-400 text-black shadow-xl mr-auto'
+                  : 'bg-white text-gray-900 shadow-sm border border-gray-200 mr-auto'
                   }`}
               >
+
                 {message.type === 'user' ? (
                   <p className="whitespace-pre-wrap break-words">{message.content}</p>
                 ) : (
