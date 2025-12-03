@@ -40,6 +40,13 @@ black>=23.7.0
 flake8>=6.0.0
 mypy>=1.4.0
 
+# Database
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+
+# Gemini AI API (for ensemble mode)
+google-generativeai>=0.8.0
+
 # Utilities
 python-dotenv>=1.0.0
 pyyaml>=6.0

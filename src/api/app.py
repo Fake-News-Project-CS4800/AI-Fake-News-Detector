@@ -5,13 +5,19 @@ from typing import Dict, Optional
 
 import torch
 import yaml
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
+# Load environment variables from .env file
+load_dotenv()
+
 from ..data.preprocessor import compute_hash, normalize_text
 from ..explainability.explainer import ModelExplainer
+from .gemini_client import GeminiDetector
+from .ensemble import EnsembleDetector
 # from ..blockchain.proof_packet import ProofPacket  # Blockchain integration - TODO: add later
 from sqlalchemy.orm import Session
 from ..db.database import SessionLocal
@@ -69,12 +75,15 @@ class AnalyzeResponse(BaseModel):
     processing_time_ms: float
     # proof_packet: Optional[Dict] = None  # Blockchain - TODO: add later
     explanation: Optional[Dict] = None
+    ensemble: Optional[Dict] = None  # Ensemble data if available
 
 
 # Global variables for model (loaded at startup)
 model = None
 tokenizer = None
 explainer = None
+gemini_detector = None
+ensemble_detector = None
 device = None
 MODEL_VERSION = "1.0.0"
 
@@ -82,7 +91,7 @@ MODEL_VERSION = "1.0.0"
 @app.on_event("startup")
 async def load_model():
     """Load model at startup."""
-    global model, tokenizer, explainer, device
+    global model, tokenizer, explainer, gemini_detector, ensemble_detector, device
 
     print("Loading model...")
 
@@ -103,6 +112,17 @@ async def load_model():
         print(f"Warning: Could not initialize explainer: {e}")
         print("API will work but explanations will be limited")
         explainer = None
+
+    # Initialize Gemini detector (optional - requires API key)
+    try:
+        gemini_detector = GeminiDetector()
+        ensemble_detector = EnsembleDetector()
+        print("Gemini detector initialized - ensemble mode enabled")
+    except Exception as e:
+        print(f"Warning: Could not initialize Gemini detector: {e}")
+        print("API will work with RoBERTa only (no ensemble)")
+        gemini_detector = None
+        ensemble_detector = None
 
     print(f"Model loaded successfully on {device}")
 
@@ -202,6 +222,44 @@ async def analyze_text(
             'Inconclusive': inconclusive_prob / total
         }
 
+        # Store RoBERTa prediction for ensemble
+        roberta_prediction = {
+            'label': label,
+            'confidence': confidence,
+            'probabilities': probabilities
+        }
+
+        # Get Gemini prediction and combine with ensemble if available
+        ensemble_result = None
+        if gemini_detector is not None and ensemble_detector is not None:
+            try:
+                print("Getting Gemini prediction...")
+                gemini_prediction = gemini_detector.analyze_text(request.text)
+
+                print(f"Gemini: {gemini_prediction['label']} ({gemini_prediction['confidence']:.2%})")
+                print(f"RoBERTa: {label} ({confidence:.2%})")
+
+                # Combine predictions
+                ensemble_result = ensemble_detector.combine_predictions(
+                    roberta_prediction,
+                    gemini_prediction
+                )
+
+                # Update final prediction with ensemble result
+                label = ensemble_result['label']
+                confidence = ensemble_result['confidence']
+
+                # Update probabilities based on ensemble (if not inconclusive)
+                if label != 'Inconclusive':
+                    probabilities = ensemble_result['roberta']['probabilities']
+
+                print(f"Ensemble: {label} ({confidence:.2%}) - {ensemble_result['agreement_level']}")
+
+            except Exception as e:
+                print(f"Warning: Ensemble prediction failed: {e}")
+                print("Falling back to RoBERTa-only prediction")
+                ensemble_result = None
+
         # Get explanation if requested
         # TEMPORARILY DISABLE EXPLANATIONS (otherwise Captum errors out)
         explanation = None
@@ -212,19 +270,29 @@ async def analyze_text(
             try:
                 if request.include_explanation:
                     full_explanation = explainer.explain_prediction(request.text)
-                    reasons = full_explanation['reasons']
+                    base_reasons = full_explanation['reasons']
                     explanation = {
                         'top_tokens': full_explanation['top_tokens'][:5],  # Limit for API response
                         'full_analysis': full_explanation
                     }
                 else:
                     # Still get basic reasons
-                    reasons = explainer.get_heuristic_reasons(request.text, predicted_class)
+                    base_reasons = explainer.get_heuristic_reasons(request.text, predicted_class)
+
+                # Add ensemble reasons if available
+                if ensemble_result is not None:
+                    reasons = ensemble_detector.get_ensemble_reasons(ensemble_result, base_reasons)
+                else:
+                    reasons = base_reasons
+
             except Exception as e:
                 print(f"Warning: Explanation failed: {e}")
                 reasons = [f"Classification: {label} (confidence: {confidence:.2%})"]
         else:
-            reasons = [f"Classification: {label} (confidence: {confidence:.2%})"]
+            if ensemble_result is not None:
+                reasons = ensemble_detector.get_ensemble_reasons(ensemble_result, [])
+            else:
+                reasons = [f"Classification: {label} (confidence: {confidence:.2%})"]
 
         # TODO: Blockchain integration - Generate proof packet here later
         # proof_packet = None
@@ -263,7 +331,8 @@ async def analyze_text(
             model_version=MODEL_VERSION,
             processing_time_ms=processing_time_ms,
             # proof_packet=proof_packet,  # Blockchain - TODO: add later
-            explanation=explanation
+            explanation=explanation,
+            ensemble=ensemble_result
         )
 
     except Exception as e:
