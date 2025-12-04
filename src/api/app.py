@@ -96,12 +96,22 @@ async def load_model():
     print("Loading model...")
 
     device = torch.device(model_config['device'])
-    model_name = model_config.get('name', 'Hello-SimpleAI/chatgpt-detector-roberta')
 
-    # Load pre-trained model and tokenizer from HuggingFace
-    print(f"Loading {model_name} from HuggingFace...")
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name).to(device)
+	# Check for fine-tuned model first
+    fine_tuned_path = "./models/checkpoints/best_model"  # Updated path
+    if os.path.exists(fine_tuned_path):
+        print(f"Loading fine-tuned model from {fine_tuned_path}")
+        tokenizer = AutoTokenizer.from_pretrained(fine_tuned_path)
+        model = AutoModelForSequenceClassification.from_pretrained(fine_tuned_path).to(device)
+        print("✅ Fine-tuned model loaded successfully!")
+    else:
+        # Fallback to pre-trained model
+        model_name = model_config.get('name', 'Hello-SimpleAI/chatgpt-detector-roberta')
+        print(f"Loading pre-trained model: {model_name}")
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSequenceClassification.from_pretrained(model_name).to(device)
+        print("⚠️  Using pre-trained model. Train your own with: python train_model.py")
+    
     model.eval()
 
     # Initialize explainer (optional - may fail with some models)
@@ -198,7 +208,7 @@ async def analyze_text(
         if confidence_2way < confidence_threshold:
             # Low confidence -> Inconclusive
             predicted_class = 2  # Inconclusive
-            label = 'Inconclusive'
+            label = 'Likely AI'
             confidence = 1.0 - confidence_2way  # Confidence in being inconclusive
         else:
             # High confidence -> Human or AI
