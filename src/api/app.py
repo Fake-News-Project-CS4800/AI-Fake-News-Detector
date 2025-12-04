@@ -18,6 +18,7 @@ from ..data.preprocessor import compute_hash, normalize_text
 from ..explainability.explainer import ModelExplainer
 from .gemini_client import GeminiDetector
 from .ensemble import EnsembleDetector
+from ..analysis.style_analyzer import StyleAnalyzer
 # from ..blockchain.proof_packet import ProofPacket  # Blockchain integration - TODO: add later
 from sqlalchemy.orm import Session
 from ..db.database import SessionLocal
@@ -76,6 +77,7 @@ class AnalyzeResponse(BaseModel):
     # proof_packet: Optional[Dict] = None  # Blockchain - TODO: add later
     explanation: Optional[Dict] = None
     ensemble: Optional[Dict] = None  # Ensemble data if available
+    style_analysis: Optional[Dict] = None  # Writing style metrics
 
 
 # Global variables for model (loaded at startup)
@@ -84,6 +86,7 @@ tokenizer = None
 explainer = None
 gemini_detector = None
 ensemble_detector = None
+style_analyzer = None
 device = None
 MODEL_VERSION = "1.0.0"
 
@@ -91,7 +94,7 @@ MODEL_VERSION = "1.0.0"
 @app.on_event("startup")
 async def load_model():
     """Load model at startup."""
-    global model, tokenizer, explainer, gemini_detector, ensemble_detector, device
+    global model, tokenizer, explainer, gemini_detector, ensemble_detector, style_analyzer, device
 
     print("Loading model...")
 
@@ -123,6 +126,10 @@ async def load_model():
         print("API will work with RoBERTa only (no ensemble)")
         gemini_detector = None
         ensemble_detector = None
+
+    # Initialize style analyzer
+    style_analyzer = StyleAnalyzer()
+    print("Style analyzer initialized")
 
     print(f"Model loaded successfully on {device}")
 
@@ -305,6 +312,16 @@ async def analyze_text(
         #         reasons=reasons
         #     )
 
+        # Perform style analysis
+        style_analysis = None
+        if style_analyzer is not None:
+            try:
+                style_analysis = style_analyzer.analyze(request.text)
+                print("Style analysis completed")
+            except Exception as e:
+                print(f"Warning: Style analysis failed: {e}")
+                style_analysis = None
+
         # Calculate processing time
         processing_time_ms = (time.time() - start_time) * 1000
 
@@ -332,7 +349,8 @@ async def analyze_text(
             processing_time_ms=processing_time_ms,
             # proof_packet=proof_packet,  # Blockchain - TODO: add later
             explanation=explanation,
-            ensemble=ensemble_result
+            ensemble=ensemble_result,
+            style_analysis=style_analysis
         )
 
     except Exception as e:

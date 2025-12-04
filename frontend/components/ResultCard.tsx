@@ -1,6 +1,8 @@
 'use client';
 
 import { AnalyzeResponse } from '@/lib/types';
+import StyleAnalysisModal from './StyleAnalysisModal';
+import { useState } from 'react';
 
 interface ResultCardProps {
   result: AnalyzeResponse;
@@ -8,6 +10,7 @@ interface ResultCardProps {
 
 export default function ResultCard({ result }: ResultCardProps) {
   const { label, confidence, probabilities, reasons, processing_time_ms, ensemble } = result;
+  const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
 
   // Color coding based on label
   const getLabelColor = () => {
@@ -133,6 +136,36 @@ export default function ResultCard({ result }: ResultCardProps) {
             ))}
           </ul>
         </div>
+      )}
+
+      {/* Style Analysis Button */}
+      {result.style_analysis && (
+        <>
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <button
+              onClick={() => setIsStyleModalOpen(true)}
+              className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 rounded-lg border-2 border-blue-200 hover:border-blue-300 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📊</span>
+                <div className="text-left">
+                  <div className="font-semibold text-gray-800">View Writing Style Analysis</div>
+                  <div className="text-xs text-gray-600">Detailed linguistic metrics and patterns</div>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Style Analysis Modal */}
+          <StyleAnalysisModal
+            styleAnalysis={result.style_analysis}
+            isOpen={isStyleModalOpen}
+            onClose={() => setIsStyleModalOpen(false)}
+          />
+        </>
       )}
     </div>
   );
