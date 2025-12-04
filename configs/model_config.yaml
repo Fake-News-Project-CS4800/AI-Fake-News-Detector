@@ -1,23 +1,24 @@
 # Model Configuration
 model:
-  name: "distilbert-base-uncased"  # Can switch to roberta-base for better performance
-  num_labels: 3  # Human, AI, Inconclusive
-  max_length: 512
+  name: "Hello-SimpleAI/chatgpt-detector-roberta"  # Can switch to roberta-base for better performance
+  num_labels: 2  # Human, AI, Inconclusive
+  max_length: 256
   use_hybrid_features: false  # Set to true to add perplexity + stylometric features
 
 # Training Configuration
 training:
   output_dir: "./models/checkpoints"
-  num_epochs: 3
-  batch_size: 16
-  learning_rate: 2e-5
+  num_epochs: 2
+  batch_size: 4  # Increased for M1 efficiency
+  learning_rate: 0.00002  # 2e-5 written as decimal
   weight_decay: 0.01
-  warmup_steps: 500
-  logging_steps: 100
-  eval_steps: 500
-  save_steps: 1000
-  gradient_accumulation_steps: 2
-  fp16: true  # Use mixed precision training if GPU supports it
+  warmup_steps: 100
+  logging_steps: 25
+  eval_steps: 50   # Evaluate every 50 steps  
+  save_steps: 50   # Save checkpoint every 50 steps (much more frequent!)
+  save_total_limit: 5  # Keep more checkpoints since we're saving frequently
+  gradient_accumulation_steps: 8
+  fp16: false  # M1 Macs don't support FP16 well with MPS
   seed: 42
 
 # Data Configuration

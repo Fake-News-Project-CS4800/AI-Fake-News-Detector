@@ -77,10 +77,10 @@ def compute_metrics(
 
     # Basic metrics
     metrics['accuracy'] = accuracy_score(y_true, y_pred)
-    metrics['f1_macro'] = f1_score(y_true, y_pred, average='macro')
-    metrics['f1_weighted'] = f1_score(y_true, y_pred, average='weighted')
-    metrics['precision_macro'] = precision_score(y_true, y_pred, average='macro')
-    metrics['recall_macro'] = recall_score(y_true, y_pred, average='macro')
+    metrics['f1_macro'] = f1_score(y_true, y_pred, average='macro', zero_division=0)
+    metrics['f1_weighted'] = f1_score(y_true, y_pred, average='weighted', zero_division=0)
+    metrics['precision_macro'] = precision_score(y_true, y_pred, average='macro', zero_division=0)
+    metrics['recall_macro'] = recall_score(y_true, y_pred, average='macro', zero_division=0)
 
     # ROC-AUC (one-vs-rest for multiclass)
     try:
@@ -98,7 +98,7 @@ def compute_metrics(
     metrics['calibration_error'] = calibration_error(y_true, y_probs)
 
     # Per-class F1 scores
-    f1_per_class = f1_score(y_true, y_pred, average=None)
+    f1_per_class = f1_score(y_true, y_pred, average=None, zero_division=0)
     metrics['f1_human'] = f1_per_class[0] if len(f1_per_class) > 0 else 0.0
     metrics['f1_ai'] = f1_per_class[1] if len(f1_per_class) > 1 else 0.0
     metrics['f1_inconclusive'] = f1_per_class[2] if len(f1_per_class) > 2 else 0.0
