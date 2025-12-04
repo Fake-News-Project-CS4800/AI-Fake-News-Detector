@@ -46,6 +46,7 @@ export default function ChatInterface() {
         type: 'bot',
         content: `Analysis complete! This text appears to be **${result.label}**-written.`,
         result,
+        originalText: input,
         timestamp: new Date(),
       };
 
@@ -126,7 +127,7 @@ export default function ChatInterface() {
                 ) : (
                   <div className="space-y-4">
                     <p className="text-sm">{message.content}</p>
-                    {message.result && <ResultCard result={message.result} />}
+                    {message.result && <ResultCard result={message.result} originalText={message.originalText} />}
                   </div>
                 )}
               </div>

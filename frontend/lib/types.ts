@@ -95,5 +95,6 @@ export interface Message {
   type: 'user' | 'bot';
   content: string;
   result?: AnalyzeResponse;
+  originalText?: string;
   timestamp: Date;
 }

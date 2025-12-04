@@ -19,6 +19,7 @@ from ..explainability.explainer import ModelExplainer
 from .gemini_client import GeminiDetector
 from .ensemble import EnsembleDetector
 from ..analysis.style_analyzer import StyleAnalyzer
+from ..analysis.adversarial_tester import AdversarialTester
 # from ..blockchain.proof_packet import ProofPacket  # Blockchain integration - TODO: add later
 from sqlalchemy.orm import Session
 from ..db.database import SessionLocal
@@ -87,6 +88,7 @@ explainer = None
 gemini_detector = None
 ensemble_detector = None
 style_analyzer = None
+adversarial_tester = None
 device = None
 MODEL_VERSION = "1.0.0"
 
@@ -94,7 +96,7 @@ MODEL_VERSION = "1.0.0"
 @app.on_event("startup")
 async def load_model():
     """Load model at startup."""
-    global model, tokenizer, explainer, gemini_detector, ensemble_detector, style_analyzer, device
+    global model, tokenizer, explainer, gemini_detector, ensemble_detector, style_analyzer, adversarial_tester, device
 
     print("Loading model...")
 
@@ -130,6 +132,70 @@ async def load_model():
     # Initialize style analyzer
     style_analyzer = StyleAnalyzer()
     print("Style analyzer initialized")
+
+    # Initialize adversarial tester with prediction function
+    def predict_fn(text: str) -> Dict:
+        """Prediction function for adversarial testing."""
+        try:
+            # Normalize text
+            from ..data.preprocessor import normalize_text
+            normalized = normalize_text(text)
+
+            # Tokenize
+            encoding = tokenizer(
+                normalized,
+                return_tensors='pt',
+                truncation=True,
+                max_length=512
+            )
+            input_ids = encoding['input_ids'].to(device)
+            attention_mask = encoding['attention_mask'].to(device)
+
+            # Predict
+            with torch.no_grad():
+                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                logits = outputs.logits
+                probs = torch.softmax(logits, dim=-1)
+                predicted_class_2way = torch.argmax(probs, dim=-1).item()
+                confidence_2way = probs[0, predicted_class_2way].item()
+
+            # Apply confidence threshold
+            confidence_threshold = model_config.get('confidence_threshold', 0.7)
+            if confidence_2way < confidence_threshold:
+                label = 'Inconclusive'
+                confidence = 1.0 - confidence_2way
+            else:
+                label = 'Human' if predicted_class_2way == 0 else 'AI'
+                confidence = confidence_2way
+
+            # Calculate probabilities
+            human_prob = float(probs[0, 0])
+            ai_prob = float(probs[0, 1])
+            max_prob = max(human_prob, ai_prob)
+            inconclusive_prob = 1.0 - max_prob if max_prob < confidence_threshold else 0.0
+
+            total = human_prob + ai_prob + inconclusive_prob
+            probabilities = {
+                'Human': human_prob / total,
+                'AI': ai_prob / total,
+                'Inconclusive': inconclusive_prob / total
+            }
+
+            return {
+                'label': label,
+                'confidence': confidence,
+                'probabilities': probabilities
+            }
+        except Exception as e:
+            print(f"Prediction error: {e}")
+            return {
+                'label': 'Error',
+                'confidence': 0.0,
+                'probabilities': {'Human': 0.0, 'AI': 0.0, 'Inconclusive': 1.0}
+            }
+
+    adversarial_tester = AdversarialTester(predict_fn)
+    print("Adversarial tester initialized")
 
     print(f"Model loaded successfully on {device}")
 
@@ -381,6 +447,43 @@ async def batch_analyze(texts: list[str]):
             })
 
     return {"results": results, "total": len(texts)}
+
+
+@app.post("/adversarial-test")
+async def adversarial_test(request: AnalyzeRequest):
+    """Run adversarial robustness testing on text.
+
+    Args:
+        request: Analysis request with text to test
+
+    Returns:
+        Adversarial test results with robustness metrics
+    """
+    try:
+        if adversarial_tester is None:
+            raise HTTPException(
+                status_code=503,
+                detail="Adversarial tester not initialized"
+            )
+
+        # Run adversarial tests
+        results = adversarial_tester.run_adversarial_tests(
+            text=request.text,
+            max_tests=20
+        )
+
+        return {
+            "text_hash": compute_hash(request.text),
+            "baseline": results['baseline'],
+            "adversarial_examples": results['adversarial_examples'],
+            "summary": results['summary']
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Adversarial testing failed: {str(e)}"
+        )
 
 
 if __name__ == "__main__":

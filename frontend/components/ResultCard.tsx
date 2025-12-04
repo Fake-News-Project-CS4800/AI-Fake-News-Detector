@@ -2,15 +2,18 @@
 
 import { AnalyzeResponse } from '@/lib/types';
 import StyleAnalysisModal from './StyleAnalysisModal';
+import AdversarialTestingModal from './AdversarialTestingModal';
 import { useState } from 'react';
 
 interface ResultCardProps {
   result: AnalyzeResponse;
+  originalText?: string;
 }
 
-export default function ResultCard({ result }: ResultCardProps) {
+export default function ResultCard({ result, originalText }: ResultCardProps) {
   const { label, confidence, probabilities, reasons, processing_time_ms, ensemble } = result;
   const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
+  const [isAdversarialModalOpen, setIsAdversarialModalOpen] = useState(false);
 
   // Color coding based on label
   const getLabelColor = () => {
@@ -136,6 +139,36 @@ export default function ResultCard({ result }: ResultCardProps) {
             ))}
           </ul>
         </div>
+      )}
+
+      {/* Adversarial Testing Button */}
+      {originalText && (
+        <>
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <button
+              onClick={() => setIsAdversarialModalOpen(true)}
+              className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 rounded-lg border-2 border-orange-200 hover:border-orange-300 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🛡️</span>
+                <div className="text-left">
+                  <div className="font-semibold text-gray-800">Test Model Robustness</div>
+                  <div className="text-xs text-gray-600">Run adversarial attacks and measure stability</div>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Adversarial Testing Modal */}
+          <AdversarialTestingModal
+            isOpen={isAdversarialModalOpen}
+            onClose={() => setIsAdversarialModalOpen(false)}
+            originalText={originalText}
+          />
+        </>
       )}
 
       {/* Style Analysis Button */}
