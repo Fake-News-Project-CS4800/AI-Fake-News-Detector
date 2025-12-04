@@ -43,10 +43,10 @@ export default function ResultCard({ result }: ResultCardProps) {
         <div className="flex items-center gap-3">
           <span className="text-4xl">{getIcon()}</span>
           <div>
-            <div className={`inline-block px-4 py-2 rounded-full border-2 font-bold text-lg ${getLabelColor()}`}>
+            <div className={`inline-block px-4 py-2 shadow-sm rounded-full border-2 font-bold text-lg ${getLabelColor()}`}>
               {label}
             </div>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-600 mt-1">
               Confidence: {(confidence * 100).toFixed(1)}%
             </p>
           </div>
@@ -108,11 +108,10 @@ export default function ResultCard({ result }: ResultCardProps) {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div
-                className={`h-2.5 rounded-full transition-all duration-500 ${
-                  key === 'Human' ? 'bg-green-500' :
-                  key === 'AI' ? 'bg-red-500' :
-                  'bg-yellow-500'
-                }`}
+                className={`h-2.5 rounded-full transition-all duration-500 ${key === 'Human' ? 'bg-green-700' :
+                  key === 'AI' ? 'bg-red-700' :
+                    'bg-yellow-700'
+                  }`}
                 style={{ width: `${value * 100}%` }}
               />
             </div>
@@ -127,7 +126,7 @@ export default function ResultCard({ result }: ResultCardProps) {
           <ul className="space-y-1">
             {reasons.map((reason, idx) => (
               <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
-                <span className="text-blue-500 mt-0.5">•</span>
+                <span className="text-blue-400 mt-0.5">•</span>
                 <span>{reason}</span>
               </li>
             ))}

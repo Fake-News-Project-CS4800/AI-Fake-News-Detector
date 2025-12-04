@@ -5,25 +5,37 @@ import { analyzeText, APIError } from '@/lib/api';
 import { Message } from '@/lib/types';
 import ResultCard from './ResultCard';
 
+
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const [count, setCount] = useState(0);
 
   // Auto-scroll to results when messages change
   useEffect(() => {
     if (messages.length > 0 && resultsRef.current) {
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
+      }, 500);
     }
   }, [messages]);
+
+  function increment() {
+    setCount(c => {
+      const next = c + 1;
+      return next === 0 ? next + 1 : next
+    });   // increment the counter
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!input.trim() || isLoading) return;
+
+    increment();
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -32,7 +44,7 @@ export default function ChatInterface() {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [userMessage, ...prev]);
     setInput('');
     setIsLoading(true);
 
@@ -49,7 +61,7 @@ export default function ChatInterface() {
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, botMessage]);
+      setMessages((prev) => [botMessage, ...prev]);
     } catch (error) {
       console.error('Analysis failed:', error);
 
@@ -62,31 +74,37 @@ export default function ChatInterface() {
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [errorMessage, ...prev]);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col max-w-4xl mx-auto space-y-4">
+    <div className="flex flex-col max-w-3xl mx-auto space-y-4 ml-0"
+      style={{
+        padding: '0px 20px',
+      }}
+    >
       {/* Input Area */}
+
       <form onSubmit={handleSubmit} className="relative">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Paste your text here to check if it's AI-generated..."
-          className="w-full p-4 pr-24  text-gray-300 placeholder-gray-500 border-2 border-gray-400 rounded-lg shadow-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-          rows={4}
+          placeholder="Paste your text here to check if it's AI-generated"
+          className="w-full p-4 pr-24 text-gray-600 placeholder-gray-500 border-1 border-gray-200 rounded-lg shadow-xl focus:ring-1 focus:ring-blue-100 focus:border-blue-100 resize-none"
+          rows={3}
           disabled={isLoading}
         />
         <button
           type="submit"
           disabled={!input.trim() || isLoading}
-          className="absolute bottom-4 right-4 p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="absolute bottom-4 right-4 p-3 bg-blue-500 text-black rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+            />
           ) : (
             <svg
               className="w-5 h-5"
@@ -104,10 +122,15 @@ export default function ChatInterface() {
           )}
         </button>
       </form>
+      <p
+        className={'text-black'}
+      >{count === 0 ? "" : count})</p>
+
 
       {/* Messages Area */}
       {messages.length > 0 && (
         <div className="space-y-4 p-4">
+
           {messages.map((message, index) => (
             <div
               key={message.id}
@@ -115,12 +138,12 @@ export default function ChatInterface() {
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-4 ${
-                  message.type === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-900 shadow-sm border border-gray-200'
-                }`}
+                className={`max-w-[80%] rounded-lg p-4 ${message.type === 'user'
+                  ? 'bg-blue-400 text-black shadow-xl '
+                  : 'bg-white text-gray-900 shadow-sm border border-gray-200 '
+                  }`}
               >
+
                 {message.type === 'user' ? (
                   <p className="whitespace-pre-wrap break-words">{message.content}</p>
                 ) : (
@@ -138,12 +161,12 @@ export default function ChatInterface() {
       {isLoading && (
         <div className="p-4">
           <div className="flex justify-start">
-            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg p-4 shadow-xl border border-gray-200">
               <div className="flex items-center gap-2">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
                 <span className="text-sm text-gray-500">Analyzing...</span>
               </div>
