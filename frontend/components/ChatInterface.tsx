@@ -70,22 +70,23 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col max-w-4xl mx-auto space-y-4">
-      {/* Input Area */}
-      <form onSubmit={handleSubmit} className="relative">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Paste your text here to check if it's AI-generated..."
-          className="w-full p-4 pr-24  text-gray-300 placeholder-gray-500 border-2 border-gray-400 rounded-lg shadow-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-          rows={4}
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          disabled={!input.trim() || isLoading}
-          className="absolute bottom-4 right-4 p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
+    <div className="flex flex-col max-w-4xl mx-auto">
+      {/* Input Area - Fixed at top */}
+      <div className="sticky top-0 z-10 mt-4 mb-4 pt-4">
+        <form onSubmit={handleSubmit} className="relative">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Paste your text here to check if it's AI-generated..."
+            className="w-full p-4 pr-24 bg-gradient-to-br from-gray-800 to-gray-900 text-gray-300 placeholder-gray-500 border-2 border-gray-400 rounded-lg shadow-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            rows={4}
+            disabled={isLoading}
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || isLoading}
+            className="absolute bottom-4 right-4 p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
@@ -105,10 +106,11 @@ export default function ChatInterface() {
           )}
         </button>
       </form>
+      </div>
 
       {/* Messages Area */}
       {messages.length > 0 && (
-        <div className="space-y-4 p-4">
+        <div className="space-y-4 p-4 mt-4">
           {messages.map((message, index) => (
             <div
               key={message.id}
@@ -137,7 +139,7 @@ export default function ChatInterface() {
       )}
 
       {isLoading && (
-        <div className="p-4">
+        <div className="p-4 mt-4">
           <div className="flex justify-start">
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
               <div className="flex items-center gap-2">
