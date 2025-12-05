@@ -15,6 +15,20 @@ export default function ResultCard({ result, originalText }: ResultCardProps) {
   const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
   const [isAdversarialModalOpen, setIsAdversarialModalOpen] = useState(false);
 
+  // Determine likely class when inconclusive
+  const getLikelyClass = () => {
+    if (label !== 'Inconclusive') return null;
+
+    if (probabilities.AI > probabilities.Human) {
+      return { class: 'AI', probability: probabilities.AI, color: 'text-red-600' };
+    } else if (probabilities.Human > probabilities.AI) {
+      return { class: 'Human', probability: probabilities.Human, color: 'text-green-600' };
+    }
+    return null;
+  };
+
+  const likelyClass = getLikelyClass();
+
   // Color coding based on label
   const getLabelColor = () => {
     switch (label) {
@@ -49,8 +63,15 @@ export default function ResultCard({ result, originalText }: ResultCardProps) {
         <div className="flex items-center gap-3">
           <span className="text-4xl">{getIcon()}</span>
           <div>
-            <div className={`inline-block px-4 py-2 rounded-full border-2 font-bold text-lg ${getLabelColor()}`}>
-              {label}
+            <div className="flex items-center gap-2">
+              <div className={`inline-block px-4 py-2 rounded-full border-2 font-bold text-lg ${getLabelColor()}`}>
+                {label}
+              </div>
+              {likelyClass && (
+                <div className={`text-sm font-medium ${likelyClass.color}`}>
+                  (Most likely {likelyClass.class})
+                </div>
+              )}
             </div>
             <p className="text-sm text-gray-500 mt-1">
               Confidence: {(confidence * 100).toFixed(1)}%
