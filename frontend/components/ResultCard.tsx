@@ -1,13 +1,33 @@
 'use client';
 
 import { AnalyzeResponse } from '@/lib/types';
+import StyleAnalysisModal from './StyleAnalysisModal';
+import AdversarialTestingModal from './AdversarialTestingModal';
+import { useState } from 'react';
 
 interface ResultCardProps {
   result: AnalyzeResponse;
+  originalText?: string;
 }
 
-export default function ResultCard({ result }: ResultCardProps) {
+export default function ResultCard({ result, originalText }: ResultCardProps) {
   const { label, confidence, probabilities, reasons, processing_time_ms, ensemble } = result;
+  const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
+  const [isAdversarialModalOpen, setIsAdversarialModalOpen] = useState(false);
+
+  // Determine likely class when inconclusive
+  const getLikelyClass = () => {
+    if (label !== 'Inconclusive') return null;
+
+    if (probabilities.AI > probabilities.Human) {
+      return { class: 'AI', probability: probabilities.AI, color: 'text-red-600' };
+    } else if (probabilities.Human > probabilities.AI) {
+      return { class: 'Human', probability: probabilities.Human, color: 'text-green-600' };
+    }
+    return null;
+  };
+
+  const likelyClass = getLikelyClass();
 
   // Color coding based on label
   const getLabelColor = () => {
@@ -43,8 +63,15 @@ export default function ResultCard({ result }: ResultCardProps) {
         <div className="flex items-center gap-3">
           <span className="text-4xl">{getIcon()}</span>
           <div>
-            <div className={`inline-block px-4 py-2 rounded-full border-2 font-bold text-lg ${getLabelColor()}`}>
-              {label}
+            <div className="flex items-center gap-2">
+              <div className={`inline-block px-4 py-2 rounded-full border-2 font-bold text-lg ${getLabelColor()}`}>
+                {label}
+              </div>
+              {likelyClass && (
+                <div className={`text-sm font-medium ${likelyClass.color}`}>
+                  (Most likely {likelyClass.class})
+                </div>
+              )}
             </div>
             <p className="text-sm text-gray-500 mt-1">
               Confidence: {(confidence * 100).toFixed(1)}%
@@ -133,6 +160,66 @@ export default function ResultCard({ result }: ResultCardProps) {
             ))}
           </ul>
         </div>
+      )}
+
+      {/* Adversarial Testing Button */}
+      {originalText && (
+        <>
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <button
+              onClick={() => setIsAdversarialModalOpen(true)}
+              className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 rounded-lg border-2 border-orange-200 hover:border-orange-300 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🛡️</span>
+                <div className="text-left">
+                  <div className="font-semibold text-gray-800">Test Model Robustness</div>
+                  <div className="text-xs text-gray-600">Run adversarial attacks and measure stability</div>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Adversarial Testing Modal */}
+          <AdversarialTestingModal
+            isOpen={isAdversarialModalOpen}
+            onClose={() => setIsAdversarialModalOpen(false)}
+            originalText={originalText}
+          />
+        </>
+      )}
+
+      {/* Style Analysis Button */}
+      {result.style_analysis && (
+        <>
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <button
+              onClick={() => setIsStyleModalOpen(true)}
+              className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 rounded-lg border-2 border-blue-200 hover:border-blue-300 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📊</span>
+                <div className="text-left">
+                  <div className="font-semibold text-gray-800">View Writing Style Analysis</div>
+                  <div className="text-xs text-gray-600">Detailed linguistic metrics and patterns</div>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Style Analysis Modal */}
+          <StyleAnalysisModal
+            styleAnalysis={result.style_analysis}
+            isOpen={isStyleModalOpen}
+            onClose={() => setIsStyleModalOpen(false)}
+          />
+        </>
       )}
     </div>
   );

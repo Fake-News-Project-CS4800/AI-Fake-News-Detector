@@ -1,10 +1,24 @@
 # AI Fake News Detector
 
-A simple API for detecting AI-generated text using a pre-trained RoBERTa model from HuggingFace.
+A full-stack application for detecting AI-generated text using machine learning.
+
+## 🌟 Overview
+
+**Backend**: FastAPI + RoBERTa transformer model + Gemini AI ensemble
+**Frontend**: Next.js 14 with React 19, interactive analysis tools
+**Features**: Real-time detection, style analysis, confidence calibration, robustness testing
+
+### Tech Stack
+- 🧠 **ML Models**: RoBERTa (HuggingFace) + Google Gemini 2.5 Flash
+- ⚡ **Backend**: Python, FastAPI, PyTorch, PostgreSQL
+- 🎨 **Frontend**: Next.js 14, React 19, TypeScript, Tailwind CSS v4
+- 📊 **Analysis**: 7 NLP metrics, adversarial testing, threshold tuning
+
+---
 
 ## 🚀 Quick Start
 
-### 1. Setup (First Time Only)
+### 1. Backend Setup
 
 ```bash
 # Navigate to project
@@ -16,14 +30,11 @@ python3 -m venv venv
 # Activate it
 source venv/bin/activate
 
-# Install dependencies
-pip install torch transformers fastapi uvicorn pydantic pyyaml nltk captum numpy
+# Install all dependencies
+pip install -r requirements.txt
 
 # Fix NLTK SSL issue (macOS)
 python -c "import ssl; import nltk; ssl._create_default_https_context = ssl._create_unverified_context; nltk.download('punkt'); nltk.download('punkt_tab')"
-
-# Install Postgres + SQLAlchemy support
-pip install sqlalchemy psycopg2-binary
 ```
 ### 2. PostgreSQL Setup
 
@@ -42,7 +53,23 @@ source venv/bin/activate
 python create_tables.py
 ```
 
-### 3. Start the API
+### 3. Setup Frontend (Optional but Recommended)
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create environment file
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+
+# Go back to root
+cd ..
+```
+
+### 4. Start the API
 
 ```bash
 # Activate virtual environment (if not already)
@@ -54,14 +81,30 @@ python run_api.py
 
 API runs at: **http://localhost:8000**
 
-### 4. Test the API
+### 5. Start Frontend (Optional - for UI)
 
-**Option A: Browser (easiest)**
+**In a new terminal:**
+```bash
+cd frontend
+npm run dev
+```
+
+Frontend runs at: **http://localhost:3000** 🎨
+
+### 6. Test the Application
+
+**Option A: Web Interface (Recommended)**
+- Open http://localhost:3000
+- Paste text into the textbox
+- Click send to analyze
+- Explore style analysis, calibration, and robustness features!
+
+**Option B: API Docs (Interactive Swagger UI)**
 - Open http://localhost:8000/docs
 - Click "POST /analyze" → "Try it out"
 - Paste text and click "Execute"
 
-**Option B: Command line**
+**Option C: Command line**
 ```bash
 curl -X POST "http://localhost:8000/analyze" \
   -H "Content-Type: application/json" \
@@ -71,7 +114,7 @@ curl -X POST "http://localhost:8000/analyze" \
   }'
 ```
 
-**Option C: Python**
+**Option D: Python**
 ```python
 import requests
 
@@ -187,6 +230,118 @@ pkill -f "run_api.py"
 
 ---
 
+## 🎨 Frontend Setup (Next.js)
+
+The project includes a modern Next.js frontend with real-time analysis and interactive visualizations.
+
+### 1. Install Frontend Dependencies
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install Node.js dependencies
+npm install
+```
+
+### 2. Configure API URL
+
+Create `.env.local` in the `frontend/` directory:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+### 3. Start Frontend Development Server
+
+```bash
+# From frontend/ directory
+npm run dev
+```
+
+Frontend runs at: **http://localhost:3000**
+
+### 4. Build for Production
+
+```bash
+# From frontend/ directory
+npm run build
+npm start
+```
+
+---
+
+## 🖥️ Frontend Features
+
+### **Main Interface**
+- **Real-time text analysis**: Paste text and get instant AI detection results
+- **Chat-style interface**: Newest results appear at top, input box stays fixed
+- **Sticky input area**: Never lose the textbox when scrolling through results
+
+### **Result Display**
+- **Classification badge**: Human 🟢 / AI 🔴 / Inconclusive 🟡
+- **Confidence score**: Percentage confidence for each prediction
+- **"Most likely" indicator**: Shows lean when result is Inconclusive
+- **Probability bars**: Visual breakdown of Human/AI/Inconclusive probabilities
+- **Processing time**: Shows analysis speed in milliseconds
+
+### **Ensemble Analysis** (when Gemini API is enabled)
+- **Dual model comparison**: Side-by-side RoBERTa vs Gemini predictions
+- **Agreement indicator**: Shows if models agree (Strong/Weak/Disagreement)
+- **Individual confidences**: See each model's confidence separately
+- **Gemini reasoning**: Text explanation from Gemini's analysis
+
+### **Advanced Features**
+
+#### 📊 **Writing Style Analysis**
+Click "View Writing Style Analysis" to see:
+- **Lexical Diversity**: Type-Token Ratio (vocabulary richness)
+- **Perplexity Proxy**: Entropy and text predictability
+- **Sentence Complexity**: Average length, variation, complex sentences
+- **Readability Scores**: Flesch Reading Ease, grade level
+- **Vocabulary Richness**: Word length distribution
+- **Punctuation Patterns**: Comma, period, exclamation usage
+- **Text Statistics**: Character, word, sentence counts
+
+Each metric includes:
+- Visual progress bar
+- Score interpretation
+- "What it means" educational box with formulas
+
+#### ⚙️ **Confidence Calibration Explorer**
+Interactive threshold tuning:
+- **Adjustable slider**: Change confidence threshold (0-100%)
+- **Real-time updates**: See how classification changes at different thresholds
+- **Precision/Recall tradeoff**: Understand false positive vs false negative rates
+- **Threshold comparison table**: View results at common thresholds (50%, 60%, 70%, 80%, 90%)
+- **Educational explanations**: Learn about threshold selection for different use cases
+
+#### 🛡️ **Model Robustness Testing**
+Tests model stability against realistic text variations:
+- **Natural typos**: Common misspellings, doubled/missing letters
+- **Punctuation variations**: Extra commas, ellipses, missing punctuation
+- **Whitespace errors**: Extra spaces, missing spaces after punctuation
+- **Filler words**: "actually", "basically", "you know", "like"
+- **Contractions**: can't ↔ cannot, it's ↔ it is
+- **Capitalization**: All lowercase, missing initial capitals
+- **Article changes**: Adding/removing "the", "a", "an"
+
+Results include:
+- **Robustness score**: 0-100% stability rating
+- **Label flip count**: How many variations changed the prediction
+- **Detailed test results**: Each variation with before/after comparison
+- **Educational content**: Explains why robustness matters
+
+### **UI/UX Details**
+- **Gradient backgrounds**: Dark gray gradients for modern aesthetic
+- **Responsive design**: Works on desktop, tablet, mobile
+- **Loading states**: Animated spinners during analysis
+- **Error handling**: Clear error messages with retry options
+- **Modal interfaces**: Click-outside-to-close for all dialogs
+- **Smooth animations**: Transitions and hover effects
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -196,39 +351,98 @@ AI-Fake-News-Detector/
 │   ├── api_config.yaml     # API configuration
 │   └── model_config.yaml   # Model configuration
 ├── src/
-│   ├── api/app.py          # FastAPI application
+│   ├── api/
+│   │   ├── app.py          # FastAPI application
+│   │   ├── gemini_client.py # Gemini API integration
+│   │   └── ensemble.py     # Ensemble decision logic
 │   ├── data/               # Text preprocessing
 │   ├── models/             # Model wrappers
 │   ├── explainability/     # Explanation generation
+│   ├── analysis/
+│   │   ├── style_analyzer.py      # NLP metrics analysis
+│   │   └── adversarial_tester.py  # Robustness testing
+│   ├── db/                 # Database models and connection
 │   └── blockchain/         # (TODO: add later)
-└── requirements.txt        # Dependencies
+├── frontend/               # Next.js web interface
+│   ├── app/                # Next.js 13+ App Router
+│   ├── components/
+│   │   ├── ChatInterface.tsx           # Main chat UI
+│   │   ├── ResultCard.tsx              # Result display
+│   │   ├── StyleAnalysisModal.tsx      # Style metrics modal
+│   │   ├── ConfidenceCalibrationModal.tsx  # Threshold explorer
+│   │   └── AdversarialTestingModal.tsx # Robustness testing UI
+│   ├── lib/
+│   │   ├── api.ts          # API client functions
+│   │   └── types.ts        # TypeScript type definitions
+│   ├── package.json        # Frontend dependencies
+│   └── tailwind.config.ts  # Tailwind CSS config
+├── requirements.txt        # Python dependencies
+└── .env.example            # Environment variables template
 ```
 
 ---
 
 ## 🔧 Troubleshooting
 
-### "Connection refused"
+### Backend Issues
+
+#### "Connection refused"
 API not running. Start it:
 ```bash
 source venv/bin/activate
 python run_api.py
 ```
 
-### "Port 8000 already in use"
+#### "Port 8000 already in use"
 Change port in `run_api.py`:
 ```python
 uvicorn.run("src.api.app:app", host="0.0.0.0", port=8001, reload=True)
 ```
 
-### NLTK errors
+#### NLTK errors
 ```bash
 source venv/bin/activate
 python -c "import ssl; import nltk; ssl._create_default_https_context = ssl._create_unverified_context; nltk.download('punkt'); nltk.download('punkt_tab')"
 ```
 
-### Model download fails
+#### Model download fails
 Check internet connection. Model downloads automatically from HuggingFace on first run.
+
+### Frontend Issues
+
+#### "Failed to connect to the API"
+1. Make sure backend is running on port 8000
+2. Check `.env.local` has correct API URL:
+   ```
+   NEXT_PUBLIC_API_URL=http://localhost:8000
+   ```
+3. Verify CORS is enabled in backend (already configured)
+
+#### Frontend won't start
+```bash
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+npm run dev
+```
+
+#### "Port 3000 already in use"
+Kill the process or change port:
+```bash
+# Kill existing process
+lsof -ti:3000 | xargs kill
+
+# Or run on different port
+PORT=3001 npm run dev
+```
+
+#### Style/UI issues
+Clear Next.js cache:
+```bash
+cd frontend
+rm -rf .next
+npm run dev
+```
 
 ---
 
@@ -244,31 +458,94 @@ Check internet connection. Model downloads automatically from HuggingFace on fir
 
 ## 🎯 What's Working
 
-✅ Real-time text classification
-✅ Human vs AI detection
-✅ Confidence-based "Inconclusive" category
+### Backend API
+✅ Real-time text classification (Human/AI/Inconclusive)
+✅ RoBERTa-based transformer model
+✅ Confidence-based thresholding
 ✅ Fast inference (~20-100ms)
 ✅ REST API with FastAPI
-✅ Interactive API docs
+✅ Interactive API docs at `/docs`
 ✅ Ensemble mode with RoBERTa + Gemini (optional)
-✅ Next.js frontend with real-time analysis
-✅ Visual ensemble comparison UI
+✅ PostgreSQL database integration
+✅ Writing style analysis (7 NLP metrics)
+✅ Model robustness testing (20+ realistic variations)
+
+### Frontend (Next.js)
+✅ Modern chat-style interface
+✅ Real-time text analysis
+✅ Sticky input textbox (stays at top)
+✅ Newest results appear first
+✅ Visual probability bars
+✅ Ensemble comparison UI (when enabled)
+✅ "Most likely" indicator for Inconclusive results
+✅ Interactive writing style analysis modal
+✅ Confidence calibration explorer with slider
+✅ Model robustness testing with detailed results
+✅ Educational tooltips and explanations
+✅ Responsive design (mobile/tablet/desktop)
+✅ Dark gradient theme
+✅ Loading states and error handling
+
+### Advanced Features
+✅ 7-metric style analyzer (TTR, entropy, readability, etc.)
+✅ Precision/recall tradeoff visualization
+✅ Realistic adversarial testing (typos, punctuation, fillers)
+✅ Interactive threshold adjustment
+✅ Robustness scoring (0-100%)
+✅ Click-outside-to-close modals
 
 ⚠️ Blockchain integration commented out (add later)
 
 ---
 
+## 🚀 Running the Full Stack
+
+To run both backend and frontend together:
+
+### Terminal 1 - Backend
+```bash
+source venv/bin/activate
+python run_api.py
+# API runs at http://localhost:8000
+```
+
+### Terminal 2 - Frontend
+```bash
+cd frontend
+npm run dev
+# Frontend runs at http://localhost:3000
+```
+
+Now visit **http://localhost:3000** to use the full application!
+
+---
+
 ## 📝 Next Steps
 
-1. Test with your own text samples
-2. Adjust confidence threshold if needed
-3. Integrate into your application
-4. Add blockchain verification (when ready)
+1. ✅ Test with your own text samples via the frontend
+2. ✅ Explore the style analysis, calibration, and robustness features
+3. ✅ Adjust confidence threshold in `configs/api_config.yaml` if needed
+4. ✅ Enable Gemini ensemble mode for improved accuracy (optional)
+5. 📋 Add custom features or integrate into your application
+6. 📋 Add blockchain verification (when ready)
 
 ---
 
 ## 🤝 Support
 
-- API docs: http://localhost:8000/docs
-- Check logs: Watch terminal where `run_api.py` is running
-- Test files: `test_ai.json`, `test_human.json` for quick tests
+- **Frontend**: http://localhost:3000
+- **API docs**: http://localhost:8000/docs
+- **Health check**: http://localhost:8000/health
+- **Logs**: Watch terminals where backend/frontend are running
+- **Test files**: `test_ai.json`, `test_human.json` for quick API tests
+
+---
+
+## 📚 Key Technologies
+
+- **Backend**: Python 3.x, FastAPI, PyTorch, Transformers, Google Gemini API
+- **Frontend**: Next.js 14, React 19, TypeScript, Tailwind CSS v4
+- **Database**: PostgreSQL, SQLAlchemy
+- **ML Models**: RoBERTa (HuggingFace), Gemini 2.5 Flash (Google)
+- **Analysis**: NLTK, TextStat, NumPy
+- **Deployment**: Uvicorn (backend), Next.js standalone (frontend)
