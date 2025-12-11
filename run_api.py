@@ -10,15 +10,18 @@ sys.path.insert(0, project_root)
 import uvicorn
 
 if __name__ == "__main__":
+    # Use PORT from environment (for cloud deployment) or default to 8000
+    port = int(os.getenv('PORT', 8000))
+
     print("Starting AI Fake News Detector API...")
     print(f"Project root: {project_root}")
-    print("API will be available at: http://localhost:8000")
-    print("API docs at: http://localhost:8000/docs")
+    print(f"API will be available at: http://localhost:{port}")
+    print(f"API docs at: http://localhost:{port}/docs")
     print("-" * 60)
 
     uvicorn.run(
         "src.api.app:app",
         host="0.0.0.0",
-        port=8000,
+        port=port,
         reload=True
     )
