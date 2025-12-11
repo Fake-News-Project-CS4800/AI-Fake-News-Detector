@@ -2,6 +2,8 @@
 
 A full-stack application for detecting AI-generated text using machine learning.
 
+> **📍 Deployment Note**: This application runs **locally only**. The ML model (PyTorch + RoBERTa) requires ~2GB RAM, which exceeds free hosting limits. The frontend can be deployed to Vercel for demonstration purposes, but the backend must run on your local machine. See [Deployment](#-deployment) for details.
+
 ## 🌟 Overview
 
 **Backend**: FastAPI + RoBERTa transformer model + Gemini AI ensemble
@@ -520,6 +522,44 @@ Now visit **http://localhost:3000** to use the full application!
 
 ---
 
+## 🌐 Deployment
+
+### Frontend Deployment (Vercel)
+
+The frontend can be deployed to Vercel for demonstration:
+
+```bash
+cd frontend
+vercel
+```
+
+**Important**: Set environment variable in Vercel:
+- `NEXT_PUBLIC_API_URL` = `http://localhost:8000`
+
+**Note**: The deployed frontend will only work when:
+1. You're accessing it from the same machine where the backend runs
+2. The backend is running locally
+
+This is suitable for portfolio/demo purposes but won't work for external users.
+
+### Backend Deployment
+
+**The backend cannot be deployed to free hosting services** due to memory requirements:
+
+- **Memory needed**: ~2GB RAM (for PyTorch + RoBERTa model)
+- **Free tier limits**: 512MB (Render, Railway, Heroku)
+- **Paid options**:
+  - Render ($7/mo for 2GB)
+  - Railway ($10/mo)
+  - DigitalOcean ($12/mo)
+  - AWS/GCP (pay per use)
+
+**For class projects/demos**: Running locally is perfectly acceptable and standard practice for ML applications.
+
+**Alternative**: Use only Gemini API (no local model) for a lighter backend that can be deployed free, but you'll lose the RoBERTa ensemble and some features.
+
+---
+
 ## 📝 Next Steps
 
 1. ✅ Test with your own text samples via the frontend
@@ -548,4 +588,4 @@ Now visit **http://localhost:3000** to use the full application!
 - **Database**: PostgreSQL, SQLAlchemy
 - **ML Models**: RoBERTa (HuggingFace), Gemini 2.5 Flash (Google)
 - **Analysis**: NLTK, TextStat, NumPy
-- **Deployment**: Uvicorn (backend), Next.js standalone (frontend)
+- **Hosting**: Local development (backend), Vercel (frontend demo)

@@ -489,13 +489,10 @@ async def adversarial_test(request: AnalyzeRequest):
 if __name__ == "__main__":
     import uvicorn
 
-    # Use PORT from environment (for Render/cloud deployment) or config
-    port = int(os.getenv('PORT', api_config['port']))
-
     uvicorn.run(
         "app:app",
-        host="0.0.0.0",  # Must bind to 0.0.0.0 for cloud deployment
-        port=port,
-        reload=False,  # Disable reload in production
-        workers=1  # Single worker for free tier
+        host=api_config['host'],
+        port=api_config['port'],
+        reload=api_config['reload'],
+        workers=api_config.get('workers', 1)
     )
