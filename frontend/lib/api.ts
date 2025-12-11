@@ -6,7 +6,7 @@ import { AnalyzeRequest, AnalyzeResponse } from './types';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // Detect if we're using Gradio (HF Spaces) or FastAPI
-const isGradio = API_URL.includes('huggingface.co');
+const isGradio = API_URL.includes('huggingface.co') || API_URL.includes('.hf.space');
 
 export class APIError extends Error {
   constructor(
