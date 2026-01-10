@@ -87,15 +87,33 @@ class ModelTrainer:
         self.train_config = self.config['training']
         self.data_config = self.config['data']
 
+        # Ensure numeric values are properly converted from YAML
+        self.train_config['learning_rate'] = float(self.train_config['learning_rate'])
+        self.train_config['weight_decay'] = float(self.train_config['weight_decay'])
+        self.train_config['batch_size'] = int(self.train_config['batch_size'])
+        self.train_config['num_epochs'] = int(self.train_config['num_epochs'])
+
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_config['name'])
 
-        # Initialize model
-        self.model = FakeNewsClassifier(
-            model_name=self.model_config['name'],
-            num_labels=self.model_config['num_labels'],
-            use_hybrid_features=self.model_config.get('use_hybrid_features', False)
-        ).to(self.device)
+		# Initialize model - check if loading pre-trained or training from scratch
+        model_name = self.model_config['name']
+        
+        if "chatgpt-detector-roberta" in model_name or "roberta" in model_name:
+            # Load the pre-trained model directly for fine-tuning
+            print(f"Loading pre-trained model: {model_name}")
+            from transformers import AutoModelForSequenceClassification
+            self.model = AutoModelForSequenceClassification.from_pretrained(
+                model_name,
+                num_labels=self.model_config['num_labels']
+            ).to(self.device)
+        else:
+            # Use custom classifier for other models
+            self.model = FakeNewsClassifier(
+                model_name=self.model_config['name'],
+                num_labels=self.model_config['num_labels'],
+                use_hybrid_features=self.model_config.get('use_hybrid_features', False)
+            ).to(self.device)
 
     def load_data(self) -> tuple:
         """Load training and validation data.
@@ -130,14 +148,14 @@ class ModelTrainer:
             train_dataset,
             batch_size=self.train_config['batch_size'],
             shuffle=True,
-            num_workers=2
+            num_workers=0  # Changed from 2 to 0 to avoid fork issues
         )
 
         val_loader = DataLoader(
             val_dataset,
             batch_size=self.train_config['batch_size'],
             shuffle=False,
-            num_workers=2
+            num_workers=0  # Changed from 2 to 0 to avoid fork issues
         )
 
         return train_loader, val_loader
@@ -168,6 +186,11 @@ class ModelTrainer:
         best_val_f1 = 0.0
         global_step = 0
 
+		# Estimate training time
+        estimated_time_per_batch = 20  # seconds (conservative estimate for CPU)
+        estimated_total_time = len(train_loader) * self.train_config['num_epochs'] * estimated_time_per_batch / 60
+        print(f"Estimated training time: {estimated_total_time:.1f} minutes")
+
         for epoch in range(self.train_config['num_epochs']):
             print(f"\nEpoch {epoch + 1}/{self.train_config['num_epochs']}")
 
@@ -175,16 +198,28 @@ class ModelTrainer:
             self.model.train()
             train_loss = 0.0
 
-            for batch in tqdm(train_loader, desc="Training"):
+            # Add time tracking
+            import time
+            epoch_start_time = time.time()
+
+            for batch_idx, batch in enumerate(tqdm(train_loader, desc="Training")):
+                batch_start_time = time.time()
+
                 input_ids = batch['input_ids'].to(self.device)
                 attention_mask = batch['attention_mask'].to(self.device)
                 labels = batch['labels'].to(self.device)
 
                 # Forward pass
-                logits = self.model(
+                outputs = self.model(
                     input_ids=input_ids,
                     attention_mask=attention_mask
                 )
+
+				# Extract logits from output (handle both custom and pre-trained models)
+                if hasattr(outputs, 'logits'):
+                    logits = outputs.logits
+                else:
+                    logits = outputs
 
                 loss = criterion(logits, labels)
 
@@ -220,13 +255,22 @@ class ModelTrainer:
 
                     self.model.train()
 
+        # Save final model at the end of training (regardless of validation)
+        final_model_path = self.train_config['output_dir'] + '/final_model'
+        self.save_model(final_model_path)
+        print(f"✅ Final model saved to: {final_model_path}")
+        
         print(f"\nTraining complete! Best validation F1: {best_val_f1:.4f}")
+        print(f"Models saved:")
+        print(f"  - Best model: {self.train_config['output_dir']}/best_model")
+        print(f"  - Final model: {final_model_path}")
 
-    def evaluate(self, dataloader: DataLoader) -> Dict[str, float]:
+    def evaluate(self, dataloader: DataLoader, max_batches: int = 50) -> Dict[str, float]:
         """Evaluate model on dataloader.
 
         Args:
             dataloader: DataLoader to evaluate on
+            max_batches: Maximum number of batches to evaluate (for speed)
 
         Returns:
             Dictionary of metrics
@@ -236,16 +280,27 @@ class ModelTrainer:
         all_labels = []
         all_probs = []
 
+        batch_count = 0
         with torch.no_grad():
             for batch in tqdm(dataloader, desc="Evaluating"):
+                # Limit validation for speed
+                if batch_count >= max_batches:
+                    break
+                    
                 input_ids = batch['input_ids'].to(self.device)
                 attention_mask = batch['attention_mask'].to(self.device)
                 labels = batch['labels'].to(self.device)
 
-                logits = self.model(
+                outputs = self.model(
                     input_ids=input_ids,
                     attention_mask=attention_mask
                 )
+
+                # Extract logits from output (handle both custom and pre-trained models)
+                if hasattr(outputs, 'logits'):
+                    logits = outputs.logits
+                else:
+                    logits = outputs
 
                 probs = torch.softmax(logits, dim=-1)
                 preds = torch.argmax(logits, dim=-1)
@@ -253,8 +308,9 @@ class ModelTrainer:
                 all_preds.extend(preds.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
                 all_probs.extend(probs.cpu().numpy())
-
-        metrics = compute_metrics(all_labels, all_preds, all_probs)
+                
+                batch_count += 1
+                metrics = compute_metrics(all_labels, all_preds, all_probs)
         return metrics
 
     def save_model(self, path: str):
@@ -264,9 +320,20 @@ class ModelTrainer:
             path: Path to save model
         """
         os.makedirs(path, exist_ok=True)
-        torch.save(self.model.state_dict(), f"{path}/model.pt")
-        self.tokenizer.save_pretrained(path)
-        print(f"Model saved to {path}")
+		# For pre-trained models, use the built-in save methods
+        if hasattr(self.model, 'save_pretrained'):
+            self.model.save_pretrained(path)
+            self.tokenizer.save_pretrained(path)
+            print(f"Pre-trained model saved to {path}")
+        else:
+            # For custom models, use state dict
+            torch.save(self.model.state_dict(), f"{path}/model.pt")
+            self.tokenizer.save_pretrained(path)
+            print(f"Custom model saved to {path}")
+
+        # torch.save(self.model.state_dict(), f"{path}/model.pt")
+        # self.tokenizer.save_pretrained(path)
+        # print(f"Model saved to {path}")
 
     def load_model(self, path: str):
         """Load model checkpoint.
